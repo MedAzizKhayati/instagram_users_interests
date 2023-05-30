@@ -1,2 +1,4 @@
-*.json
-images*
+data
+artifacts
+**/.amlignore*
+**/.ipynb_checkpoints*
