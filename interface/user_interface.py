@@ -1,6 +1,17 @@
 import streamlit as st
 import os
 from PIL import Image
+import requests
+import io
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+HOST = "https://graph.facebook.com/v16.0/"
+TOKEN = "EAANx1LUJPcYBAECAThWYdG9iRPJdR182r6UswLh9OWZAyAXACKs18MhJjEu2c9iA9fuoTTYEhuFBn0mwdGjE5n87bF3RqnwOdJWeZAZAlTzEfGhqgII4fuNNgtbBSeGTz7KD2iVkuZBqRqtN6cLfazSok8mmmYp33TOuzzjdFCfRCMp2RiJ3OIfFiLN4GtXD1f6JlU8FLaG3THQrfdOt"
+IG_ACCOUNT_ID = "17841458726840626"
+
+
 def main():
     # Set page title
     st.set_page_config(page_title="Instagram users interest", layout="wide")
@@ -20,9 +31,12 @@ def render_sidebar():
 def render_content():
     st.title("User interest prediction")
     insta_user = st.text_input("Type an instagram username", "")
-    display_interest()
-    display_images()
+    if insta_user:
+        images, captions = extract_datas(insta_user)
+        display_interest(images, captions)
+        # display_images()
     # Add main content here
+
 
 def get_image_files(directory):
     # Filter and return image files based on the test
@@ -31,90 +45,162 @@ def get_image_files(directory):
     for file in os.listdir(directory):
         if file.endswith(".jpg") or file.endswith(".png"):
             # Check if the test matches the image file name or any other criteria
-         
+
             image_files.append(os.path.join(directory, file))
     return image_files
 
-def display_images():
+
+def display_images(images):
     # Get file paths of images from your disk based on the test
-    image_dir = "images/"
-    image_files = get_image_files(image_dir)
-    images = []
-     # Create a grid layout with 3 columns
-   
-    if len(image_files) > 0:
-        st.write("Displaying images:")
-        cols = st.columns(len(image_files))
+
+    # Create a grid layout with 3 columns
+
+    st.write("Displaying images:")
+    cols = st.columns(len(images))
+    i = 0
+    # Display the images side by side in the grid layout
+    for image in images:  # Display the first 5 images
+        image[0] = image[0].resize((300, 300))
         
-        # Display the images side by side in the grid layout
-        for i, file in enumerate(image_files[:5]):  # Display the first 5 images
-            image = Image.open(file)
-            # Resize the image to 300x300 pixels
-            image = image.resize((300, 300))
+        # Display the image in the appropriate column
+        with cols[i]:
+            st.image(image[0], caption=image[1], use_column_width=True)
+        i+=1
 
-            # Display the image in the appropriate column
-            with cols[i]:
-                st.image(image, caption=file, use_column_width=True)
-    else:
-        st.write("No images found for the given test.")
 
-def display_interest():
+def display_interest(images, captions):
     st.markdown("### User interests")
-    lst = ['a', 'b', 'c']
-
-    for i in lst:
+    interests = compute_interest(images, captions)
+    for i in interests:
         st.markdown("- " + i)
-    
-def paginator(label, items, items_per_page=10, on_sidebar=True):
-    """Lets the user paginate a set of items.
-    Parameters
-    ----------
-    label : str
-        The label to display over the pagination widget.
-    items : Iterator[Any]
-        The items to display in the paginator.
-    items_per_page: int
-        The number of items to display per page.
-    on_sidebar: bool
-        Whether to display the paginator widget on the sidebar.
-        
-    Returns
-    -------
-    Iterator[Tuple[int, Any]]
-        An iterator over *only the items on that page*, including
-        the item's index.
-    Example
-    -------
-    This shows how to display a few pages of fruit.
-    >>> fruit_list = [
-    ...     'Kiwifruit', 'Honeydew', 'Cherry', 'Honeyberry', 'Pear',
-    ...     'Apple', 'Nectarine', 'Soursop', 'Pineapple', 'Satsuma',
-    ...     'Fig', 'Huckleberry', 'Coconut', 'Plantain', 'Jujube',
-    ...     'Guava', 'Clementine', 'Grape', 'Tayberry', 'Salak',
-    ...     'Raspberry', 'Loquat', 'Nance', 'Peach', 'Akee'
-    ... ]
-    ...
-    ... for i, fruit in paginator("Select a fruit page", fruit_list):
-    ...     st.write('%s. **%s**' % (i, fruit))
-    """
 
-    # Figure out where to display the paginator
-    if on_sidebar:
-        location = st.sidebar.empty()
-    else:
-        location = st.empty()
 
-    # Display a pagination selectbox in the specified location.
-    items = list(items)
-    n_pages = len(items)
-    n_pages = (len(items) - 1) // items_per_page + 1
-    page_format_func = lambda i: "Page %s" % i
-    page_number = location.selectbox(label, range(n_pages), format_func=page_format_func)
+def compute_interest(images, captions):
+    pass
 
-    # Iterate over the items in the page to let the user display them.
-    min_index = page_number * items_per_page
-    max_index = min_index + items_per_page
-    import itertools
-    return itertools.islice(enumerate(items), min_index, max_index)
+
+def extract_datas(insta_user):
+    # Extract data from the API
+    json = {
+        "business_discovery": {
+            "name": "Nike",
+            "biography": "Spotlighting athlete* and\xa0👟\xa0stories\n#BlackLivesMatter and #StopAsianHate",
+            "followers_count": 295158500,
+            "follows_count": 151,
+            "media_count": 1134,
+            "profile_picture_url": "https://scontent.ftun16-1.fna.fbcdn.net/v/t51.2885-15/285265415_157543166760141_7125906423211419857_n.jpg?_nc_cat=1&ccb=1-7&_nc_sid=86c713&_nc_ohc=XVAjDvQE66AAX-9x9aK&_nc_ht=scontent.ftun16-1.fna&edm=AL-3X8kEAAAA&oh=00_AfBQdKN0pOlWFnti9oPSQR-tK098OTzFfb7F6q73KIlQzw&oe=647E5693",
+            "media": {
+                "data": [
+                    {
+                        "media_type": "CAROUSEL_ALBUM",
+                        "media_url": "https://scontent.cdninstagram.com/v/t51.29350-15/350442700_635812141751378_1531557628601014694_n.jpg?_nc_cat=1&ccb=1-7&_nc_sid=8ae9d6&_nc_ohc=y71D5Otv7mwAX-huCG8&_nc_ht=scontent.cdninstagram.com&edm=AL-3X8kEAAAA&oh=00_AfAGd20I_t1cTnXUUUtOqOaDfcswq09m51ZlH3JCwwJL1w&oe=647E1EFE",
+                        "timestamp": "2023-06-01T16:01:55+0000",
+                        "caption": "The 2023 Be True Collection is here. Made in collaboration with designer and artist Zoe Schlacter (they/them), bold geometric patterns and swirling graphics serve as a celebration of the legends and dreamers of LGBTQIA+ communities and their legacies.\n\nAvailable now. Link in bio. 💃✨",
+                        "comments_count": 435,
+                        "like_count": 30590,
+                        "id": "17990014702890528",
+                    },
+                    {
+                        "media_type": "CAROUSEL_ALBUM",
+                        "media_url": "https://scontent.cdninstagram.com/v/t51.29350-15/350442700_635812141751378_1531557628601014694_n.jpg?_nc_cat=1&ccb=1-7&_nc_sid=8ae9d6&_nc_ohc=y71D5Otv7mwAX-huCG8&_nc_ht=scontent.cdninstagram.com&edm=AL-3X8kEAAAA&oh=00_AfAGd20I_t1cTnXUUUtOqOaDfcswq09m51ZlH3JCwwJL1w&oe=647E1EFE",
+                        "timestamp": "2023-06-01T16:01:55+0000",
+                        "caption": "The 2023 Be True Collection is here. Made in collaboration with designer and artist Zoe Schlacter (they/them), bold geometric patterns and swirling graphics serve as a celebration of the legends and dreamers of LGBTQIA+ communities and their legacies.\n\nAvailable now. Link in bio. 💃✨",
+                        "comments_count": 435,
+                        "like_count": 30590,
+                        "id": "17990014702890528",
+                    },
+                    {
+                        "media_type": "CAROUSEL_ALBUM",
+                        "media_url": "https://scontent.cdninstagram.com/v/t51.29350-15/350442700_635812141751378_1531557628601014694_n.jpg?_nc_cat=1&ccb=1-7&_nc_sid=8ae9d6&_nc_ohc=y71D5Otv7mwAX-huCG8&_nc_ht=scontent.cdninstagram.com&edm=AL-3X8kEAAAA&oh=00_AfAGd20I_t1cTnXUUUtOqOaDfcswq09m51ZlH3JCwwJL1w&oe=647E1EFE",
+                        "timestamp": "2023-06-01T16:01:55+0000",
+                        "caption": "The 2023 Be True Collection is here. Made in collaboration with designer and artist Zoe Schlacter (they/them), bold geometric patterns and swirling graphics serve as a celebration of the legends and dreamers of LGBTQIA+ communities and their legacies.\n\nAvailable now. Link in bio. 💃✨",
+                        "comments_count": 435,
+                        "like_count": 30590,
+                        "id": "17990014702890528",
+                    },
+                    {
+                        "media_type": "CAROUSEL_ALBUM",
+                        "media_url": "https://scontent.cdninstagram.com/v/t51.29350-15/350442700_635812141751378_1531557628601014694_n.jpg?_nc_cat=1&ccb=1-7&_nc_sid=8ae9d6&_nc_ohc=y71D5Otv7mwAX-huCG8&_nc_ht=scontent.cdninstagram.com&edm=AL-3X8kEAAAA&oh=00_AfAGd20I_t1cTnXUUUtOqOaDfcswq09m51ZlH3JCwwJL1w&oe=647E1EFE",
+                        "timestamp": "2023-06-01T16:01:55+0000",
+                        "caption": "The 2023 Be True Collection is here. Made in collaboration with designer and artist Zoe Schlacter (they/them), bold geometric patterns and swirling graphics serve as a celebration of the legends and dreamers of LGBTQIA+ communities and their legacies.\n\nAvailable now. Link in bio. 💃✨",
+                        "comments_count": 435,
+                        "like_count": 30590,
+                        "id": "17990014702890528",
+                    },
+                    {
+                        "media_type": "CAROUSEL_ALBUM",
+                        "media_url": "https://scontent.cdninstagram.com/v/t51.29350-15/350442700_635812141751378_1531557628601014694_n.jpg?_nc_cat=1&ccb=1-7&_nc_sid=8ae9d6&_nc_ohc=y71D5Otv7mwAX-huCG8&_nc_ht=scontent.cdninstagram.com&edm=AL-3X8kEAAAA&oh=00_AfAGd20I_t1cTnXUUUtOqOaDfcswq09m51ZlH3JCwwJL1w&oe=647E1EFE",
+                        "timestamp": "2023-06-01T16:01:55+0000",
+                        "caption": "The 2023 Be True Collection is here. Made in collaboration with designer and artist Zoe Schlacter (they/them), bold geometric patterns and swirling graphics serve as a celebration of the legends and dreamers of LGBTQIA+ communities and their legacies.\n\nAvailable now. Link in bio. 💃✨",
+                        "comments_count": 435,
+                        "like_count": 30590,
+                        "id": "17990014702890528",
+                    },
+                    {
+                        "media_type": "CAROUSEL_ALBUM",
+                        "media_url": "https://scontent.cdninstagram.com/v/t51.29350-15/350442700_635812141751378_1531557628601014694_n.jpg?_nc_cat=1&ccb=1-7&_nc_sid=8ae9d6&_nc_ohc=y71D5Otv7mwAX-huCG8&_nc_ht=scontent.cdninstagram.com&edm=AL-3X8kEAAAA&oh=00_AfAGd20I_t1cTnXUUUtOqOaDfcswq09m51ZlH3JCwwJL1w&oe=647E1EFE",
+                        "timestamp": "2023-06-01T16:01:55+0000",
+                        "caption": "The 2023 Be True Collection is here. Made in collaboration with designer and artist Zoe Schlacter (they/them), bold geometric patterns and swirling graphics serve as a celebration of the legends and dreamers of LGBTQIA+ communities and their legacies.\n\nAvailable now. Link in bio. 💃✨",
+                        "comments_count": 435,
+                        "like_count": 30590,
+                        "id": "17990014702890528",
+                    },
+                ]
+            },
+        }
+    }
+
+    images = get_imgs(json)
+    get_random_images(images)
+    display_images(images)
+    captions = get_captions(insta_user, json)
+    return images, captions
+
+
+def get_imgs(dataset, local=False, ext="jpg", video=False):
+    img = None
+    images = []
+    posts = dataset["business_discovery"]["media"]["data"]
+    n = 0
+    try:
+        for post in posts:
+            if post.get("media_type", "") == "VIDEO" and not video:
+                return None
+            if not local:
+                media_url = post["media_url"]
+                caption  = post["caption"]
+                response = requests.get(media_url)
+                img = response.content
+                img = Image.open(io.BytesIO(img))
+                images.append([img, caption])
+
+    except Exception as e:
+        print("Error: ", e)
+    return images
+
+
+def get_random_images(images):
+    # Randomly select five indices from the image array
+    indices = np.random.choice(len(images), 5, replace=False)
+    imgs = []
+    # Display the randomly selected images
+    for i in range(5):
+        image = images[indices[i]]
+        imgs.append(image)
+    return imgs
+
+
+def get_user_acc(insta_user):
+    pass
+
+
+def get_images(insta_user, json):
+    pass
+
+
+def get_captions(insta_user, json):
+    pass
+
+
 if __name__ == "__main__":
     main()
