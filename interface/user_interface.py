@@ -5,10 +5,11 @@ import requests
 import io
 import numpy as np
 import matplotlib.pyplot as plt
+from interest_detector import interest_model
 
 
 HOST = "https://graph.facebook.com/v16.0/"
-TOKEN = "EAAkrxJG28MYBAIYTYDZAmZB2wPWTqzTPcM3HiS77aIFgkWadCAk26S06eHzGVqkezQujXXOH6mRoHOx77kYiqtK1oRuTMYhZChyNTZB22tuSfuyzK0sFv4CB9Ir3XDBOoIKd53Jt0649DTwiBpKmRpusqiuy5dtsk5XxuNFuUuDT7wMQbYrYI6ZBtB0rnp7ZA16zyMLwUfRUDQ7EBsdfP0"
+TOKEN = "EAAkrxJG28MYBAJZBIGOYXHGjMuS8ZAuECKLpeQiLXsT8WzHI7ComTfzgNrb5S9ZB5DZAZBRFi88Wv3hMx7QHTZCnxui7SgzjCZBJZBwA6X0v3bVza0ZArrQleI4fIzvKXiAL1W4AK93sZB9s7XaCZBcePUiEDTmIyUJxh0JVvmINlPspPBQ3NX9g6HmeVlfH65MrfTQoYQb7vZBNmzVVLHxV25xL"
 IG_ACCOUNT_ID = "17841458726840626"
 
 
@@ -32,10 +33,8 @@ def render_content():
     insta_user = st.text_input("Type an instagram username", "")
     if insta_user:
         posts = extract_datas(insta_user)
-        display_images(posts)
         display_interest(posts)
-
-    # Add main content here
+        display_images(posts)
 
 
 def get_image_files(directory):
@@ -50,43 +49,43 @@ def get_image_files(directory):
     return image_files
 
 
-def display_images(images):
+def display_images(posts):
     # Get file paths of images from your disk based on the test
-
-    # Create a grid layout with 3 columns
-
+    # Create a grid layout with 4 columns
     st.write("Displaying images:")
-    cols = st.columns(len(images))
+    cols = st.columns(5)
     i = 0
-    # Display the images side by side in the grid layout
-    for image in images:  # Display the first 5 images
-        image[0] = image[0].resize((300, 300))
-
+    # Display the images in rows of 4
+    for post in posts:
+        post[0] = post[0].resize((300, 300))
         # Display the image in the appropriate column
-        with cols[i]:
-            st.image(image[0], caption=image[1], use_column_width=True)
+        with cols[i % 5]:
+            st.image(post[0], caption=post[1], use_column_width=True)
+        
+        # Increment the column index
         i += 1
 
 
-def display_interest(images, captions):
+def display_interest(posts):
     st.markdown("### User interests")
-    interests = predict_interest(images, captions)
+    interests = predict_interest(posts)
     for i in interests:
         st.markdown("- " + i)
 
 
-def predict_interest(images, captions):
-    pass
+def predict_interest(posts):
+    return interest_model.predict(posts)
 
 
 def extract_datas(insta_user):
     # Extract data from the API
-    json = get_instagram_user_details(insta_user)
-    images = get_imgs(json)
+    limit = 10
+    json = get_instagram_user_details(insta_user, limit)
+    images = get_imgs(json, limit=limit)
     return images
 
 
-def get_imgs(dataset, local=False, ext="jpg", video=False):
+def get_imgs(dataset, local=False, ext="jpg", video=False, limit=6):
     img = None
     images = []
     posts = dataset["business_discovery"]["media"]["data"]
@@ -105,15 +104,6 @@ def get_imgs(dataset, local=False, ext="jpg", video=False):
         print("Error: ", e)
     return images
 
-
-def get_random_images(images):
-    # Randomly select five indices from the image array
-    imgs = []
-    # Display the randomly selected images
-    for i in range(min(5, len(images))):
-        image = images[i]
-        imgs.append(image)
-    return imgs
 
 
 def get_instagram_user_details(username, limit=6):
@@ -137,9 +127,6 @@ def get_instagram_user_details(username, limit=6):
     url = url.replace("\n", "").replace(" ", "")
     response = requests.get(url)
     return response.json()
-
-    pass
-
 
 if __name__ == "__main__":
     main()
