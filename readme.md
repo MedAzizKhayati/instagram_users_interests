@@ -3,6 +3,10 @@
 A simple and well designed structure is essential for any Deep Learning project, so after a lot practice and contributing in pytorch projects here's a pytorch project template that combines **simplicity, best practice for folder structure** and **good OOP design**. 
 The main idea is that there's much same stuff you do every time when you start your pytorch project, so wrapping all this shared stuff will help you to change just the core idea every time you start a new pytorch project. 
 
+![Screenshot 2023-06-02 004739](https://github.com/MedAzizKhayati/instagram_users_interests/assets/68187294/f7352a24-1efd-4ffa-a44d-21e2384da6a2)
+![Screenshot 2023-06-02 005146](https://github.com/MedAzizKhayati/instagram_users_interests/assets/68187294/a06779a2-b0fa-44d1-9a3d-a48c70b59a48)
+![Screenshot 2023-06-02 004025](https://github.com/MedAzizKhayati/instagram_users_interests/assets/68187294/ae0e0c60-e1b5-40cd-987d-7d848cba7f79)
+
 **So, here’s a simple pytorch template that help you get into your main project faster and just focus on your core (Model Architecture, Training Flow, etc)**
 
 In order to decrease repeated stuff, we recommend to use a high-level library. You can write your own high-level library or you can just use some third-part libraries such as [ignite](https://github.com/pytorch/ignite), [fastai](https://github.com/fastai/fastai), [mmcv](https://github.com/open-mmlab/mmcv) … etc. This can help you write compact but full-featured training loops in a few lines of code. Here we use ignite to train mnist as an example.
